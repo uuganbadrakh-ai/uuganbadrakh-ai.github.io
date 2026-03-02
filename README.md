@@ -1,0 +1,2 @@
+# uuganbadrakh.github.io
+website
