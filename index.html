@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uuganbadrakh Dorjbymba | Electronics Engineering</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #050d17;
+  --surface: #0b1928;
+  --cyan: #00e5ff;
+  --cyan2: #00b4cc;
+  --orange: #ff6b35;
+  --white: #dff0f8;
+  --muted: #3d5f75;
+  --muted2: #6b90a8;
+}
+
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  cursor: crosshair;
+}
+
+/* ── CANVAS ── */
+#canvas-wrap { position: fixed; inset: 0; z-index: 0; }
+
+/* ── GRID OVERLAY ── */
+#grid-overlay {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,229,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,.025) 1px, transparent 1px);
+  background-size: 55px 55px;
+}
+
+/* ── SCANLINE ── */
+#scanline {
+  position: fixed; left: 0; right: 0; height: 1px; z-index: 2;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,229,255,.18) 40%, rgba(0,229,255,.35) 50%, rgba(0,229,255,.18) 60%, transparent 100%);
+  animation: scan 7s linear infinite;
+  pointer-events: none;
+}
+@keyframes scan { from { top: -1px; } to { top: 100vh; } }
+
+/* ── HUD CORNERS ── */
+.hud-corner {
+  position: fixed; width: 44px; height: 44px; z-index: 10; pointer-events: none;
+}
+.hud-corner::before, .hud-corner::after { content: ''; position: absolute; background: var(--cyan); opacity: .5; }
+.hud-corner.tl { top: 22px; left: 22px; }
+.hud-corner.tl::before { top: 0; left: 0; width: 100%; height: 1px; }
+.hud-corner.tl::after  { top: 0; left: 0; width: 1px; height: 100%; }
+.hud-corner.tr { top: 22px; right: 22px; }
+.hud-corner.tr::before { top: 0; right: 0; width: 100%; height: 1px; }
+.hud-corner.tr::after  { top: 0; right: 0; width: 1px; height: 100%; }
+.hud-corner.bl { bottom: 22px; left: 22px; }
+.hud-corner.bl::before { bottom: 0; left: 0; width: 100%; height: 1px; }
+.hud-corner.bl::after  { bottom: 0; left: 0; width: 1px; height: 100%; }
+.hud-corner.br { bottom: 22px; right: 22px; }
+.hud-corner.br::before { bottom: 0; right: 0; width: 100%; height: 1px; }
+.hud-corner.br::after  { bottom: 0; right: 0; width: 1px; height: 100%; }
+
+/* ── TOP BAR ── */
+#topbar {
+  position: fixed; top: 28px; left: 50%; transform: translateX(-50%);
+  z-index: 10;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; color: var(--muted);
+  display: flex; align-items: center; gap: 18px;
+  opacity: 0; animation: fadeDown .8s ease .3s forwards;
+}
+#topbar .sep { width: 1px; height: 14px; background: var(--muted); opacity: .4; }
+#topbar .highlight { color: rgba(0,229,255,.55); }
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── LEFT PANEL ── */
+#panel-left {
+  position: fixed; left: 48px; top: 50%; transform: translateY(-50%);
+  z-index: 10; width: 295px;
+  opacity: 0; animation: slideRight 1s ease .5s forwards;
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateY(-50%) translateX(-28px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+.eyebrow {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 3.5px; color: var(--cyan);
+  text-transform: uppercase; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.eyebrow::before {
+  content: '';
+  display: block; width: 24px; height: 1px; background: var(--cyan);
+}
+
+h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 66px; line-height: .88; letter-spacing: 1.5px;
+  color: var(--white);
+  text-shadow: 0 0 40px rgba(0,229,255,.2);
+  margin-bottom: 18px;
+}
+h1 .accent { color: var(--cyan); text-shadow: 0 0 25px rgba(0,229,255,.6); }
+
+.role {
+  font-size: 12px; font-weight: 300; color: var(--muted2);
+  letter-spacing: .5px; line-height: 1.7; margin-bottom: 28px;
+  font-style: italic;
+}
+
+.panel-divider {
+  height: 1px;
+  background: linear-gradient(90deg, var(--cyan), rgba(0,229,255,.08));
+  margin-bottom: 24px; opacity: .35;
+}
+
+.section-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; letter-spacing: 3px; color: var(--cyan);
+  text-transform: uppercase; margin-bottom: 12px; opacity: .7;
+}
+
+.skill-list {
+  list-style: none; display: flex; flex-direction: column; gap: 7px;
+  margin-bottom: 24px;
+}
+.skill-list li {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11.5px; color: var(--muted2); line-height: 1;
+  transition: color .2s;
+}
+.skill-list li::before {
+  content: '';
+  width: 16px; height: 1px; background: var(--cyan); opacity: .4;
+  flex-shrink: 0; transition: opacity .2s, width .2s;
+}
+.skill-list li:hover { color: var(--white); }
+.skill-list li:hover::before { opacity: 1; width: 22px; }
+
+.project-list {
+  list-style: none; display: flex; flex-direction: column; gap: 7px;
+}
+.project-list li {
+  font-size: 11.5px; color: var(--muted2); line-height: 1.4;
+  padding-left: 14px; position: relative; transition: color .2s;
+}
+.project-list li::before {
+  content: '▸'; position: absolute; left: 0;
+  color: var(--orange); font-size: 9px; top: 1px;
+  transition: transform .2s;
+}
+.project-list li:hover { color: var(--white); }
+.project-list li:hover::before { transform: translateX(3px); }
+
+/* ── RIGHT PANEL ── */
+#panel-right {
+  position: fixed; right: 48px; top: 50%; transform: translateY(-50%);
+  z-index: 10; width: 210px;
+  opacity: 0; animation: slideLeft 1s ease .7s forwards;
+}
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateY(-50%) translateX(28px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+.readout-block { margin-bottom: 22px; }
+
+.xyz-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+  margin-bottom: 22px;
+}
+.xyz-cell {
+  background: rgba(0,229,255,.04);
+  border: 1px solid rgba(0,229,255,.12);
+  border-radius: 3px; padding: 10px 8px;
+  text-align: center;
+  transition: border-color .3s;
+}
+.xyz-cell:hover { border-color: rgba(0,229,255,.35); }
+.xyz-axis {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; letter-spacing: 2px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 5px;
+}
+.xyz-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px; color: var(--cyan);
+  text-shadow: 0 0 10px rgba(0,229,255,.5);
+}
+
+.dof-rows { display: flex; flex-direction: column; gap: 9px; }
+.dof-row { display: flex; align-items: center; gap: 10px; }
+.dof-id {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; color: var(--muted); width: 22px;
+}
+.dof-track {
+  flex: 1; height: 2px; background: rgba(255,255,255,.06);
+  border-radius: 2px; overflow: hidden;
+}
+.dof-fill {
+  height: 100%; background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
+  border-radius: 2px;
+  transition: width .08s linear;
+}
+.dof-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; color: var(--muted2); width: 38px; text-align: right;
+}
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; letter-spacing: 1.5px; color: var(--muted2);
+  margin-top: 18px;
+}
+.pulse-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
+  animation: blink 1.8s ease-in-out infinite;
+}
+.pulse-dot.orange { background: var(--orange); box-shadow: 0 0 8px var(--orange); }
+@keyframes blink {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .35; transform: scale(.65); }
+}
+
+/* ── BOTTOM BAR ── */
+#bottombar {
+  position: fixed; bottom: 34px; left: 50%; transform: translateX(-50%);
+  z-index: 10; display: flex; align-items: center; gap: 24px;
+  opacity: 0; animation: fadeUp .9s ease 1s forwards;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.bottom-item {
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; color: var(--muted);
+}
+.bsep { width: 1px; height: 16px; background: rgba(255,255,255,.07); }
+
+/* ── DRAG HINT ── */
+#hint {
+  position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace; font-size: 9px;
+  letter-spacing: 2.5px; color: var(--muted); z-index: 10;
+  opacity: 0; animation: hintCycle 4s ease 2.5s forwards;
+  pointer-events: none;
+}
+@keyframes hintCycle {
+  0%   { opacity: 0; }
+  25%  { opacity: .5; }
+  75%  { opacity: .5; }
+  100% { opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- LAYERS -->
+<div id="grid-overlay"></div>
+<div id="scanline"></div>
+<div id="canvas-wrap"></div>
+
+<!-- HUD CORNERS -->
+<div class="hud-corner tl"></div>
+<div class="hud-corner tr"></div>
+<div class="hud-corner bl"></div>
+<div class="hud-corner br"></div>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <span class="highlight">ARM_SYS</span>
+  <div class="sep"></div>
+  <span>6DOF_CTRL v3.1</span>
+  <div class="sep"></div>
+  <span id="clock">--:--:--</span>
+  <div class="sep"></div>
+  <span class="highlight">ONLINE</span>
+</div>
+
+<!-- LEFT PANEL -->
+<div id="panel-left">
+  <div class="eyebrow">Robotics Engineer</div>
+  <h1>UUGANBADRAKH<br><span class="accent">DORJBYMBA</span></h1>
+  <p class="role">Robotics & Embedded Systems Engineer<br>Hardware–Software Co-Design Enthusiast</p>
+  <div class="panel-divider"></div>
+
+  <div class="section-label">// Skills</div>
+  <ul class="skill-list">
+    <li>6DOF Kinematics & Motion Optimization</li>
+    <li>YOLOv8 Computer Vision & Processing</li>
+    <li>STM32 / ESP32 Embedded Systems</li>
+    <li>ARM Assembly & MIPS 5-Stage Pipeline</li>
+    <li>Verilog / VHDL Digital Design</li>
+    <li>Linux Embedded Systems</li>
+    <li>IoT Automation & Smart Systems</li>
+  </ul>
+
+  <div class="section-label">// Projects</div>
+  <ul class="project-list">
+    <li>Industrial 6DOF Robotic Arm Control</li>
+    <li>YOLOv8 Vision Sorting System</li>
+    <li>Smart Greenhouse IoT Platform</li>
+    <li>Drone Flight Controller Electronics</li>
+    <li>Custom MIPS Pipeline Processor</li>
+  </ul>
+</div>
+
+<!-- RIGHT PANEL -->
+<div id="panel-right">
+  <div class="section-label">// End Effector Position</div>
+  <div class="xyz-grid">
+    <div class="xyz-cell"><div class="xyz-axis">X</div><div class="xyz-val" id="posX">0.00</div></div>
+    <div class="xyz-cell"><div class="xyz-axis">Y</div><div class="xyz-val" id="posY">0.00</div></div>
+    <div class="xyz-cell"><div class="xyz-axis">Z</div><div class="xyz-val" id="posZ">0.00</div></div>
+  </div>
+
+  <div class="section-label">// Joint Angles</div>
+  <div class="dof-rows">
+    <div class="dof-row"><span class="dof-id">J1</span><div class="dof-track"><div class="dof-fill" id="df0"></div></div><span class="dof-num" id="dv0">0°</span></div>
+    <div class="dof-row"><span class="dof-id">J2</span><div class="dof-track"><div class="dof-fill" id="df1"></div></div><span class="dof-num" id="dv1">0°</span></div>
+    <div class="dof-row"><span class="dof-id">J3</span><div class="dof-track"><div class="dof-fill" id="df2"></div></div><span class="dof-num" id="dv2">0°</span></div>
+    <div class="dof-row"><span class="dof-id">J4</span><div class="dof-track"><div class="dof-fill" id="df3"></div></div><span class="dof-num" id="dv3">0°</span></div>
+    <div class="dof-row"><span class="dof-id">J5</span><div class="dof-track"><div class="dof-fill" id="df4"></div></div><span class="dof-num" id="dv4">0°</span></div>
+    <div class="dof-row"><span class="dof-id">J6</span><div class="dof-track"><div class="dof-fill" id="df5"></div></div><span class="dof-num" id="dv5">0°</span></div>
+  </div>
+
+  <div class="status-badge"><div class="pulse-dot"></div> SERVO ONLINE</div><br>
+  <div class="status-badge" style="margin-top:8px"><div class="pulse-dot orange"></div> VISION ACTIVE</div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div id="bottombar">
+  <div class="bottom-item"><div class="pulse-dot"></div> SYSTEM ONLINE</div>
+  <div class="bsep"></div>
+  <div class="bottom-item">ROBOTICS AI CONTROL PLATFORM</div>
+  <div class="bsep"></div>
+  <div class="bottom-item">DRAG TO ORBIT</div>
+</div>
+
+<div id="hint">DRAG TO ORBIT · SCROLL TO ZOOM</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+<script>
+// Clock
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
+}, 1000);
+
+// ── Scene ──
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050d17);
+scene.fog = new THREE.FogExp2(0x050d17, 0.038);
+
+const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, .1, 500);
+camera.position.set(7, 6, 11);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = .05;
+controls.minDistance = 4;
+controls.maxDistance = 28;
+controls.target.set(0, 3.5, 0);
+
+// ── Lights ──
+scene.add(new THREE.AmbientLight(0x162840, 1.8));
+
+const keyLight = new THREE.DirectionalLight(0x00e5ff, 2.8);
+keyLight.position.set(7, 14, 7);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.setScalar(2048);
+keyLight.shadow.camera.near = .5;
+keyLight.shadow.camera.far = 50;
+scene.add(keyLight);
+
+const fillLight = new THREE.DirectionalLight(0x0050aa, 1);
+fillLight.position.set(-8, 4, -5);
+scene.add(fillLight);
+
+const rimLight = new THREE.PointLight(0xff6b35, 1.5, 18);
+rimLight.position.set(-4, 10, -4);
+scene.add(rimLight);
+
+// ── Materials ──
+const matBody = new THREE.MeshStandardMaterial({ color: 0x09192e, metalness: .92, roughness: .18 });
+const matJoint = new THREE.MeshStandardMaterial({ color: 0x0f2035, metalness: .97, roughness: .1 });
+const matAccent = new THREE.MeshStandardMaterial({
+  color: 0x00e5ff, metalness: .6, roughness: .2,
+  emissive: new THREE.Color(0x003a4f), emissiveIntensity: .7
+});
+const matGripper = new THREE.MeshStandardMaterial({
+  color: 0xff6b35, metalness: .55, roughness: .35,
+  emissive: new THREE.Color(0x2a1000), emissiveIntensity: .8
+});
+const matStripe = new THREE.MeshStandardMaterial({
+  color: 0x00e5ff, metalness: .5, roughness: .3,
+  emissive: new THREE.Color(0x004455), emissiveIntensity: .6
+});
+
+// ── Floor & Grid ──
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(32, 32),
+  new THREE.MeshStandardMaterial({ color: 0x040c15, metalness: .2, roughness: .9 })
+);
+floor.rotation.x = -Math.PI/2; floor.receiveShadow = true;
+scene.add(floor);
+
+const grid = new THREE.GridHelper(32, 32, 0x00e5ff, 0x091828);
+grid.material.opacity = .22; grid.material.transparent = true;
+scene.add(grid);
+
+// ── Particles ──
+const pCount = 220;
+const pPos = new Float32Array(pCount * 3);
+for (let i = 0; i < pCount; i++) {
+  pPos[i*3]   = (Math.random()-.5)*22;
+  pPos[i*3+1] = Math.random()*14;
+  pPos[i*3+2] = (Math.random()-.5)*22;
+}
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({
+  color: 0x00e5ff, size: .045, transparent: true, opacity: .45
+})));
+
+// ── Robot Arm ──
+// BASE
+const baseGroup = new THREE.Group();
+scene.add(baseGroup);
+
+const baseDisc = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.65, .28, 40), matBody);
+baseDisc.castShadow = true; baseGroup.add(baseDisc);
+
+const baseRing = new THREE.Mesh(new THREE.TorusGeometry(1.4, .06, 8, 40), matAccent);
+baseRing.rotation.x = Math.PI/2; baseRing.position.y = .13; baseGroup.add(baseRing);
+
+const mountCyl = new THREE.Mesh(new THREE.CylinderGeometry(.78, .78, .22, 32), matJoint);
+mountCyl.position.y = .23; baseGroup.add(mountCyl);
+
+// DOF1 — Waist
+const j1 = new THREE.Group(); j1.position.y = .34; baseGroup.add(j1);
+
+const waist = new THREE.Mesh(new THREE.CylinderGeometry(.6, .65, .55, 28), matJoint);
+j1.add(waist);
+const waistAccRing = new THREE.Mesh(new THREE.TorusGeometry(.58, .04, 6, 28), matAccent);
+waistAccRing.rotation.x = Math.PI/2; waistAccRing.position.y = .24; j1.add(waistAccRing);
+
+// Shoulder platform
+const shoulderPlatform = new THREE.Group(); shoulderPlatform.position.y = .3; j1.add(shoulderPlatform);
+
+// DOF2 — Shoulder pitch
+const j2 = new THREE.Group(); shoulderPlatform.add(j2);
+
+const shoulderDisc = new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .4, 28), matAccent);
+shoulderDisc.rotation.z = Math.PI/2; j2.add(shoulderDisc);
+
+// Upper arm
+const upperArmGrp = new THREE.Group(); j2.add(upperArmGrp);
+
+const upperArmBody = new THREE.Mesh(new THREE.BoxGeometry(.45, 2.7, .45), matBody);
+upperArmBody.position.y = 1.35; upperArmBody.castShadow = true; upperArmGrp.add(upperArmBody);
+
+const uStripe = new THREE.Mesh(new THREE.BoxGeometry(.07, 2.3, .07), matStripe);
+uStripe.position.set(.2, 1.35, .2); upperArmGrp.add(uStripe);
+
+// DOF3 — Elbow
+const j3 = new THREE.Group(); j3.position.y = 2.7; upperArmGrp.add(j3);
+
+const elbowDisc = new THREE.Mesh(new THREE.CylinderGeometry(.38, .38, .42, 24), matJoint);
+elbowDisc.rotation.z = Math.PI/2; j3.add(elbowDisc);
+const elbowAcc = new THREE.Mesh(new THREE.TorusGeometry(.36, .04, 6, 24), matAccent);
+elbowAcc.rotation.x = Math.PI/2; elbowAcc.position.y = .19; j3.add(elbowAcc);
+
+// Forearm
+const forearmGrp = new THREE.Group(); j3.add(forearmGrp);
+
+const forearmBody = new THREE.Mesh(new THREE.BoxGeometry(.35, 2.2, .35), matBody);
+forearmBody.position.y = 1.1; forearmBody.castShadow = true; forearmGrp.add(forearmBody);
+
+const fStripe = new THREE.Mesh(new THREE.BoxGeometry(.06, 1.8, .06), matStripe);
+fStripe.position.set(.15, 1.1, .15); forearmGrp.add(fStripe);
+
+// DOF4 — Wrist roll
+const j4 = new THREE.Group(); j4.position.y = 2.2; forearmGrp.add(j4);
+
+const wrist1 = new THREE.Mesh(new THREE.CylinderGeometry(.28, .28, .32, 20), matJoint);
+wrist1.rotation.z = Math.PI/2; j4.add(wrist1);
+
+const wristLink = new THREE.Group(); j4.add(wristLink);
+const wristBody = new THREE.Mesh(new THREE.BoxGeometry(.24, .85, .24), matBody);
+wristBody.position.y = .42; wristLink.add(wristBody);
+
+// DOF5 — Wrist pitch
+const j5 = new THREE.Group(); j5.position.y = .85; wristLink.add(j5);
+
+const wrist2 = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, .26, 18), matAccent);
+wrist2.rotation.z = Math.PI/2; j5.add(wrist2);
+
+// DOF6 — Gripper spin
+const j6 = new THREE.Group(); j5.add(j6);
+
+const gripMount = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .22, 16), matJoint);
+gripMount.position.y = .11; j6.add(gripMount);
+
+// Gripper
+const gripperGrp = new THREE.Group(); gripperGrp.position.y = .33; j6.add(gripperGrp);
+
+const palm = new THREE.Mesh(new THREE.BoxGeometry(.52, .11, .2), matGripper);
+gripperGrp.add(palm);
+
+const fL = new THREE.Group(); fL.position.x = -.2; gripperGrp.add(fL);
+const fLb = new THREE.Mesh(new THREE.BoxGeometry(.1, .36, .14), matGripper); fLb.position.y = .24; fL.add(fLb);
+const fLt = new THREE.Mesh(new THREE.BoxGeometry(.09, .24, .12), matGripper); fLt.position.set(.02, .52, 0); fL.add(fLt);
+
+const fR = new THREE.Group(); fR.position.x = .2; gripperGrp.add(fR);
+const fRb = new THREE.Mesh(new THREE.BoxGeometry(.1, .36, .14), matGripper); fRb.position.y = .24; fR.add(fRb);
+const fRt = new THREE.Mesh(new THREE.BoxGeometry(.09, .24, .12), matGripper); fRt.position.set(-.02, .52, 0); fR.add(fRt);
+
+// Gripper glow
+const gripLight = new THREE.PointLight(0xff6b35, 2.2, 2.5);
+gripLight.position.y = .7; gripperGrp.add(gripLight);
+
+// ── Smooth joint state ──
+const current = [0,0,0,0,0,0];
+function smooth(c, t, s) { return c + (t - c) * s; }
+
+// ── Animate ──
+let t = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  t += .007;
+
+  const targets = [
+    t * .38,
+    Math.sin(t * .65) * .62,
+    Math.cos(t * .85) * .48 - .15,
+    Math.sin(t * 1.25) * .75,
+    Math.sin(t * .9 + 1.2) * .45,
+    t * 1.8
+  ];
+
+  for (let i = 0; i < 6; i++) current[i] = smooth(current[i], targets[i], .04);
+
+  j1.rotation.y = current[0];
+  j2.rotation.z = current[1];
+  j3.rotation.z = current[2];
+  j4.rotation.y = current[3];
+  j5.rotation.z = current[4];
+  j6.rotation.y = current[5];
+
+  // gripper open/close
+  const grip = (Math.sin(t * .7) * .5 + .5) * .14;
+  fL.position.x = -.2 - grip;
+  fR.position.x =  .2 + grip;
+
+  // End effector XYZ
+  const ep = new THREE.Vector3();
+  gripperGrp.getWorldPosition(ep);
+  document.getElementById('posX').textContent = ep.x.toFixed(2);
+  document.getElementById('posY').textContent = ep.y.toFixed(2);
+  document.getElementById('posZ').textContent = ep.z.toFixed(2);
+
+  // DOF bars
+  current.forEach((a, i) => {
+    const deg = ((a * 180 / Math.PI) % 360 + 360) % 360;
+    document.getElementById('df' + i).style.width = (deg / 360 * 100) + '%';
+    document.getElementById('dv' + i).textContent = deg.toFixed(0) + '°';
+  });
+
+  // Drift particles
+  const pa = pGeo.attributes.position.array;
+  for (let i = 1; i < pCount * 3; i += 3) {
+    pa[i] += .003; if (pa[i] > 14) pa[i] = 0;
+  }
+  pGeo.attributes.position.needsUpdate = true;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
