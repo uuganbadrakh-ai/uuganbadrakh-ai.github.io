@@ -273,6 +273,23 @@ h1 .accent { color: var(--cyan); text-shadow: 0 0 25px rgba(0,229,255,.6); }
 </head>
 <body>
 
+<!-- warning area for WebGL/JS -->
+<div id="warning" style="position:fixed;top:0;left:0;width:100%;background:#900;color:#fff;text-align:center;z-index:1000;display:none;">
+  <span id="warning-msg"></span>
+</div>
+<noscript>
+  <div style="color:#f88;padding:20px;text-align:center;">
+    JavaScript is required to view the 3‑D robot and interactive HUD. Please enable JS and reload.
+  </div>
+</noscript>
+<script>
+// simple feature detection
+if (!window.WebGLRenderingContext) {
+  document.getElementById('warning').style.display = 'block';
+  document.getElementById('warning-msg').textContent = 'WebGL is not supported in this browser; 3D content will not render.';
+}
+</script>
+
 <!-- LAYERS -->
 <div id="grid-overlay"></div>
 <div id="scanline"></div>
