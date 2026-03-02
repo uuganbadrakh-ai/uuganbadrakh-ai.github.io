@@ -1,2 +1,2 @@
-# uuganbadrakh.github.io
+# uuganbadrakh-ai.github.io
 website
